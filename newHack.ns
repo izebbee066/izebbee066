@@ -1,0 +1,91 @@
+```js
+// count how many programs we have to open ports
+function countPrograms( ns ) {
+	var count = 0;
+
+	if ( ns.fileExists( "BruteSSH.exe" ) )
+		count++;
+	if ( ns.fileExists( "FTPCrack.exe" ) )
+		count++;
+	if ( ns.fileExists( "relaySMTP.exe" ) )
+		count++;
+	if ( ns.fileExists( "HTTPWorm.exe" ) )
+		count++;
+	if ( ns.fileExists( "SQLInject.exe" ) )
+		count++;
+	return count;
+}
+
+// try to open every port we can
+function breakPorts( ns, hostname ) {
+	if ( ns.fileExists( "BruteSSH.exe" ) )
+		ns.brutessh( hostname );
+	if ( ns.fileExists( "FTPCrack.exe" ) )
+		ns.ftpcrack( hostname );
+	if ( ns.fileExists( "relaySMTP.exe" ) )
+		ns.relaysmtp( hostname );
+	if ( ns.fileExists( "HTTPWorm.exe" ) )
+		ns.httpworm( hostname );
+	if ( ns.fileExists( "SQLInject.exe" ) )
+		ns.sqlinject( hostname );
+}
+
+async function rootServer( ns, target ) {
+	var ram = 0;
+	var cost = 0;
+	var threads = 0;
+	// check if we have the required skill to hack the server
+	if ( ns.getHackingLevel() < ns.getServerRequiredHackingLevel( target ) ) {
+		ns.toast(target + " is too difficult.");
+			await ns.writePort(1, target);
+			return;
+	}
+	// Do we have enough port openers to nuke the server?
+	if ( countPrograms( ns ) < ns.getServerNumPortsRequired( target ) ) {
+		// move target to the back of the queue
+		ns.toast(target + " is not nukeable.");
+		await ns.writePort(1, target);
+		return;
+	}
+	//Is the server already being hacked?
+	if(ns.isRunning("hackv2.script", target)) {
+		return;
+	}
+
+	// we have enough port openers, so open ports and nuke the server
+	breakPorts( ns, target );
+	ns.nuke( target );
+
+	// copy the hacking script over
+	await ns.scp( "hackv2.script", target );
+	// spread the hacking
+	await ns.scp( "spreadHack.ns", target );
+
+	// figure out how many threads we can run of our script
+	ram = ns.getServerMaxRam(target);
+	cost = ns.getScriptRam( "hackv2.script" );
+	threads = Math.floor( (ram[0] - ram[1]) / cost );
+
+	// execute script on the target server
+	ns.exec( "spreadHack.ns", target, 1, ‘foodnstuff’, threads );
+}
+
+
+export async function main(ns) {
+	var server = "NULL PORT DATA";
+	while(true) {
+		server = ns.readPort(1);
+		//ns.alert(server);
+		if(server == "NULL PORT DATA"){
+			//Sleep until a new server is provided
+			await ns.sleep(30000);
+		}
+		else if(server == "home") {
+			continue;
+		}
+		else {
+			await rootServer(ns, server);
+		}
+		await ns.sleep(10000);
+	}
+}
