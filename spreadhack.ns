@@ -1,0 +1,15 @@
+```js
+export async function main(ns) {
+    var servers = ns.scan();
+    var target = “foodnstuff”;
+    var threads = ns.args[1];
+    var i = 0;
+    while ( i < servers.length ) {
+        await ns.writePort(1, servers[i]);
+        i++;
+    }
+    if(target != "home") {
+        ns.spawn('hackv2.script', parseInt(threads), target);
+    }
+}
+```
