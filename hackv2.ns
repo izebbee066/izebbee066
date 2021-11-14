@@ -1,0 +1,12 @@
+```js
+var moneyThresh = getServerMaxMoney() * 0.9;
+var securityThresh = getServerMinSecurityLevel() + 2;
+while(true) {
+    if (getServerSecurityLevel() > securityThresh) {
+        weaken();
+    } else if (getServerMoneyAvailable() < moneyThresh) {
+        grow();
+    } else {
+        hack();
+    }
+}
